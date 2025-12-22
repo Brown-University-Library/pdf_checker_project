@@ -1,8 +1,8 @@
 [project]
-name = "django_template_52_project"
+name = "pdf_checker_project"
 version = "0.0.0"
-description = "Template for creatign new Django projects."
-readme = "https://github.com/Brown-University-Library/django_template_52_project/blob/main/README.md"
+description = "Webapp to validate PDF accessibility."
+readme = "coming"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "Django~=5.2.0",
@@ -20,3 +20,6 @@ prod = [
     "mysqlclient~=2.2.0", 
     ]
 ci_tests = []
+
+[tool.uv]
+exclude-newer = '1 week'  # generates the `[options]` in `uv.lock`
