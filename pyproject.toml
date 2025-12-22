@@ -1,0 +1,22 @@
+[project]
+name = "django_template_52_project"
+version = "0.0.0"
+description = "Template for creatign new Django projects."
+readme = "https://github.com/Brown-University-Library/django_template_52_project/blob/main/README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "Django~=5.2.0",
+    "httpx~=0.28.0",  # no current http requests; but here cuz we're switching to this from `requests`
+    "python-dotenv~=1.1.0",
+    "trio~=0.30.0",
+]
+
+[dependency-groups]
+local = []
+staging = [ 
+    "mysqlclient~=2.2.0",  # not yet used on dev, but useful to confirm installation
+    ]
+prod = [ 
+    "mysqlclient~=2.2.0", 
+    ]
+ci_tests = []
