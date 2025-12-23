@@ -1,5 +1,6 @@
 _(under construction)_
 
+[![CI tests](https://github.com/birkin/pdf_checker_project/actions/workflows/ci_tests.yaml/badge.svg)](https://github.com/birkin/pdf_checker_project/actions/workflows/ci_tests.yaml)
 
 # PDF Checker Project
 
