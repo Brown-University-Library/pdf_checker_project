@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 
 
@@ -5,6 +7,9 @@ class PDFDocument(models.Model):
     """
     Stores uploaded PDF document metadata and Shibboleth user info.
     """
+    ## Primary key
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
     ## File identification
     original_filename = models.CharField(max_length=255)
     file_checksum = models.CharField(max_length=64, unique=True, db_index=True)  # SHA-256
@@ -44,6 +49,9 @@ class VeraPDFResult(models.Model):
     """
     Stores veraPDF analysis results.
     """
+    ## Primary key
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    
     ## Relationship
     pdf_document = models.OneToOneField(
         PDFDocument, 
