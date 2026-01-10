@@ -1,19 +1,16 @@
 import datetime
-import hashlib
 import json
 import logging
-from pathlib import Path
 
 import trio
 from django.conf import settings as project_settings
 from django.contrib import messages
-from django.core.files.uploadedfile import UploadedFile
 from django.http import HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from pdf_checker_app.forms import PDFUploadForm
-from pdf_checker_app.lib import version_helper
+from pdf_checker_app.lib import pdf_helpers, version_helper
 from pdf_checker_app.lib.version_helper import GatherCommitAndBranchData
 from pdf_checker_app.models import PDFDocument
 
@@ -96,45 +93,6 @@ def root(request):
 # -------------------------------------------------------------------
 
 
-def get_shibboleth_user_info(request) -> dict[str, str | list[str]]:
-    """
-    Extracts Shibboleth user information from request headers.
-    """
-    ## These header names may vary depending on your Shibboleth configuration
-    ## Adjust as needed based on your Shibboleth SP configuration
-    return {
-        'first_name': request.META.get('HTTP_SHIB_GIVEN_NAME', ''),
-        'last_name': request.META.get('HTTP_SHIB_SN', ''),
-        'email': request.META.get('HTTP_SHIB_MAIL', ''),
-        'groups': request.META.get('HTTP_SHIB_GROUPS', '').split(';') if request.META.get('HTTP_SHIB_GROUPS') else [],
-    }
-
-
-def generate_checksum(file: UploadedFile) -> str:
-    """
-    Generates SHA-256 checksum for uploaded file.
-    """
-    sha256_hash = hashlib.sha256()
-    for chunk in file.chunks():
-        sha256_hash.update(chunk)
-    return sha256_hash.hexdigest()
-
-
-def save_temp_file(file: UploadedFile, checksum: str) -> Path:
-    """
-    Saves uploaded file to temporary storage.
-    """
-    temp_dir = Path(project_settings.BASE_DIR) / 'tmp' / 'uploads'
-    temp_dir.mkdir(parents=True, exist_ok=True)
-    temp_path = temp_dir / f'{checksum}.pdf'
-
-    with open(temp_path, 'wb') as dest:
-        for chunk in file.chunks():
-            dest.write(chunk)
-
-    return temp_path
-
-
 def upload_pdf(request):
     """
     Handles PDF upload and initiates processing.
@@ -146,10 +104,10 @@ def upload_pdf(request):
             pdf_file = form.cleaned_data['pdf_file']
 
             ## Get Shibboleth user info
-            user_info = get_shibboleth_user_info(request)
+            user_info = pdf_helpers.get_shibboleth_user_info(request)
 
             ## Generate checksum
-            checksum = generate_checksum(pdf_file)
+            checksum = pdf_helpers.generate_checksum(pdf_file)
 
             ## Check if already processed
             existing_doc = PDFDocument.objects.filter(file_checksum=checksum).first()
@@ -174,7 +132,7 @@ def upload_pdf(request):
                 doc = existing_doc
 
             ## Save temporary file for processing
-            temp_path = save_temp_file(pdf_file, checksum)
+            temp_path = pdf_helpers.save_temp_file(pdf_file, checksum)
             log.debug(f'saved temp file to {temp_path}')
 
             ## TODO: Process with veraPDF (will be implemented separately)
