@@ -157,7 +157,7 @@ The project is a Django web application (v5.2) using Python 3.12 and `uv` for de
 - Request/response serializers
 - API documentation (OpenAPI/Swagger)
 - Client libraries/examples
-- Webhook support for async results
+- Webhook support for async results 
 
 **Considerations**:
 - API versioning strategy
@@ -171,18 +171,22 @@ The project is a Django web application (v5.2) using Python 3.12 and `uv` for de
 **Purpose**: Handle asynchronous processing of PDF analysis and report generation.
 
 **Key Components**:
-- Task queue setup (Celery or similar)
-- Worker configuration
-- Task status tracking
+Original plan:
+- ~~Task queue setup (Celery or similar)~~
+- ~~Worker configuration~~
+- ~~Task status tracking~~
 - Result storage and retrieval
 - Task retry logic
-- Priority queue management
+- ~~Priority queue management~~
+
+Developer-comment: 
+- No, I don't want a queue/worker architecture for now. Initially, I'll use a cronjob calling a script (that will be part of this project) to see if the DB contains new things to process, and process a batch.
 
 **Considerations**:
-- Scalability (multiple workers)
-- Task timeout handling
+- ~~Scalability (multiple workers)~~
+- ~~Task timeout handling~~
 - Memory management for large PDFs
-- Dead letter queue for failed tasks
+- ~~Dead letter queue for failed tasks~~
 
 ### 10. Monitoring & Logging
 
@@ -299,3 +303,23 @@ Each functional section above provides enough context for detailed implementatio
 6. Documenting configuration requirements
 
 This high-level plan ensures all major components are identified and their relationships understood, enabling focused implementation of individual sections while maintaining overall system coherence.
+
+---
+
+# Developer-comment: 
+
+- This is great.
+
+- I'm going to first start with a very simple webapp-form (no-API) uploader, and a simple webpage response (no LLM yet).
+
+- Very initial functionality: 
+    - user uploads a PDF.
+    - file is checked that it is a PDF.
+    - checksum is generated and saved, via a model, to the initial sqlite database.
+    - veraPDF is run on the PDF (for accessibility-check).
+    - veraPDF json is saved, via a model, to the sqlite database.
+    - the verapdf json is parsed to generate a report showing two things:
+        - a simple yes/no pass/fail for accessibility.
+        - a list of all the accessibility issues found.
+
+---
