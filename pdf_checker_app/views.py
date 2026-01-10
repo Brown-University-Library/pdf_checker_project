@@ -1,6 +1,7 @@
 import datetime
 import json
 import logging
+import uuid
 
 import trio
 from django.conf import settings as project_settings
@@ -145,7 +146,7 @@ def upload_pdf(request):
     return render(request, 'pdf_checker_app/upload.html', {'form': form})
 
 
-def view_report(request, pk: int):
+def view_report(request, pk: uuid.UUID):
     """
     Displays the accessibility report for a processed PDF.
     """
