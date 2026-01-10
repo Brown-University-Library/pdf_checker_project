@@ -200,13 +200,12 @@ LOGGING = {
 ## app-level settings -----------------------------------------------
 
 ## veraPDF Configuration
-VERAPDF_PATH = os.environ.get('VERAPDF_PATH', '/usr/local/bin/verapdf')
-VERAPDF_PROFILE = os.environ.get('VERAPDF_PROFILE', 'PDFUA_1_MACHINE')
+VERAPDF_PATH = os.environ['VERAPDF_PATH']
+VERAPDF_PROFILE = os.environ['VERAPDF_PROFILE']  # for now using `PDFUA_1_MACHINE`
 
 ## File Upload Settings
 FILE_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 
 ## Temp file storage
-TEMP_FILE_PATH = BASE_DIR / 'tmp' / 'uploads'
-TEMP_FILE_PATH.mkdir(parents=True, exist_ok=True)
+PDF_UPLOAD_PATH = os.environ['PDF_UPLOAD_PATH']
