@@ -47,7 +47,7 @@ def save_pdf_file(file: UploadedFile, checksum: str) -> Path:
     Called by views.upload_pdf().
     """
     upload_dir_path = Path(project_settings.PDF_UPLOAD_PATH)
-    absolute_upload_dir_path = upload_dir_path.absolute()
+    absolute_upload_dir_path = upload_dir_path.resolve()
     absolute_upload_dir_path.mkdir(parents=True, exist_ok=True)
     upload_pdf_path = absolute_upload_dir_path / f'{checksum}.pdf'
 

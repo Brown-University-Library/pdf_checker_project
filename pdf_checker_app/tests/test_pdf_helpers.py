@@ -27,6 +27,6 @@ class PDFHelperSaveTempFileTest(TestCase):
             with override_settings(PDF_UPLOAD_PATH=temp_dir):
                 saved_path = pdf_helpers.save_pdf_file(upload, 'test_checksum_123')
                 log.debug(f'saved_path, ``{saved_path}``')
-                self.assertEqual(Path(temp_dir), saved_path.parent)
+                self.assertEqual(Path(temp_dir).resolve(), saved_path.parent)
                 self.assertTrue(saved_path.exists())
                 self.assertEqual(content, saved_path.read_bytes())
