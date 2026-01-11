@@ -46,7 +46,7 @@ def save_pdf_file(file: UploadedFile, checksum: str) -> Path:
     Saves uploaded file to temporary storage.
     Called by views.upload_pdf().
     """
-    upload_dir_path = project_settings.PDF_UPLOAD_PATH
+    upload_dir_path = Path(project_settings.PDF_UPLOAD_PATH)
     upload_dir_path.mkdir(parents=True, exist_ok=True)
     upload_pdf_path = upload_dir_path / f'{checksum}.pdf'
 
