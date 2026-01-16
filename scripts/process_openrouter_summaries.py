@@ -10,6 +10,7 @@ Usage:
 
 Requires:
     OPENROUTER_API_KEY environment variable to be set.
+    OPENROUTER_MODEL environment variable to be set.
 """
 
 import argparse
