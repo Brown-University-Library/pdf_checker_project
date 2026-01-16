@@ -2,6 +2,18 @@
 
 Review `pdf_checker_project/AGENTS.md` for coding directives.
 
+## Implementation progress tracking (directive)
+
+While implementing this plan, save periodic progress updates to `pdf_checker_project/TRACKER__poll.md`.
+
+Each update must include enough context to resume from a fresh session if work is interrupted, including:
+
+- what changed (files and high-level edits)
+- what is working vs not yet working
+- any decisions/assumptions made
+- next concrete steps
+- any commands you ran (tests, migrations, scripts) and their outcomes
+
 ## Goal
 
 Update the webapp so that:
