@@ -49,6 +49,32 @@ OPENROUTER_API_URL = 'https://openrouter.ai/api/v1/chat/completions'
 OPENROUTER_API_KEY = os.environ['OPENROUTER_API_KEY']
 OPENROUTER_MODEL = os.environ['OPENROUTER_MODEL']
 OPENROUTER_TIMEOUT = 60.0  # seconds
+PROMPT = """
+# Context: 
+- I ran a pdf accessibility report using veraPDF, using the `PDF/UA-1 - Accessibility (PDF 1.7)` profile.
+- I got back this json output:
+
+```
+{verapdf_json_output}
+```
+
+# Task: 
+- Imagine a user has uploaded this pdf to a customized pdf-accessibility checker.
+- Imagine the user is not a developer, and not extremely technically savvy, but does have access to a couple of the most common pdf-editing tools like Acrobat.
+- Analyze the validation-result json file above.
+- Main task: Come up with some helpful suggestions to the user about how to start fixing the errors.
+
+## Regarding your helpful-suggestions:
+- Focus on the top three improvements that would give the most "bang for the buck", in terms of improving accessibility.
+- Start the helpful-suggestions text like: "Here are some suggestions to improve the accessibility of your PDF."
+- Do not mention or reference the report.
+- It's ok to mention that there are other things that may need to be addressed, but the goal is to not overwhelm the user.
+- Do not use jargon, like referring to "XMP". Instead, convey that some metadata needs to be improved.
+- Do not invite followup questions.
+- Do not include information the user will have seen. 
+	- Here is information the user will have seen: ```Note: veraPDF may report thousands of "failed checks" -- but that does _not_ mean thousands of distinct problems. Think of a "failed check" as a repeated warning bell, not a separate task. Example: if the PDF lacks a language setting, or proper tagging, veraPDF will flag each affected text snippet or layout element, inflating totals. Remediation work should target a few root causes, which can clear thousands of checks quickly.```
+	- So do not reiterate that information in your helpful-suggestions.
+"""
 
 
 def get_api_key() -> str:
@@ -96,42 +122,54 @@ def build_prompt(verapdf_json: dict) -> str:
     """
     Builds the prompt for OpenRouter based on veraPDF results.
     """
-    ## Extract key information from veraPDF JSON
-    summary_info = []
+    import json
 
-    ## Try to extract summary statistics
-    if 'jobs' in verapdf_json and verapdf_json['jobs']:
-        job = verapdf_json['jobs'][0]
-        if 'validationResult' in job:
-            validation = job['validationResult']
-            summary_info.append(f'Profile: {validation.get("profileName", "Unknown")}')
-            summary_info.append(f'Compliant: {validation.get("compliant", "Unknown")}')
-
-            details = validation.get('details', {})
-            summary_info.append(f'Passed rules: {details.get("passedRules", 0)}')
-            summary_info.append(f'Failed rules: {details.get("failedRules", 0)}')
-            summary_info.append(f'Passed checks: {details.get("passedChecks", 0)}')
-            summary_info.append(f'Failed checks: {details.get("failedChecks", 0)}')
-
-    summary_text = '\n'.join(summary_info) if summary_info else 'No summary available'
-    log.debug(f'summary_text, ``{summary_text}``')
-
-    prompt = f"""You are an accessibility expert analyzing PDF/UA-1 validation results from veraPDF.
-
-Based on the following validation summary, provide a brief, helpful explanation for a document author who wants to make their PDF accessible:
-
-{summary_text}
-
-Please:
-1. Explain what the results mean in plain language
-2. If there are failures, explain the most common types of issues and how to fix them
-3. Keep the response concise (2-3 paragraphs max)
-4. Be encouraging - even many failures often stem from just a few root causes
-
-Note: The full veraPDF JSON contains detailed failure information, but focus on providing actionable guidance rather than listing every issue."""
-
+    verapdf_json_str = json.dumps(verapdf_json, indent=2)
+    prompt = PROMPT.format(verapdf_json_output=verapdf_json_str)
     log.debug(f'prompt, ``{prompt}``')
     return prompt
+
+
+# def build_prompt(verapdf_json: dict) -> str:
+#     """
+#     Builds the prompt for OpenRouter based on veraPDF results.
+#     """
+#     ## Extract key information from veraPDF JSON
+#     summary_info = []
+
+#     ## Try to extract summary statistics
+#     if 'jobs' in verapdf_json and verapdf_json['jobs']:
+#         job = verapdf_json['jobs'][0]
+#         if 'validationResult' in job:
+#             validation = job['validationResult']
+#             summary_info.append(f'Profile: {validation.get("profileName", "Unknown")}')
+#             summary_info.append(f'Compliant: {validation.get("compliant", "Unknown")}')
+
+#             details = validation.get('details', {})
+#             summary_info.append(f'Passed rules: {details.get("passedRules", 0)}')
+#             summary_info.append(f'Failed rules: {details.get("failedRules", 0)}')
+#             summary_info.append(f'Passed checks: {details.get("passedChecks", 0)}')
+#             summary_info.append(f'Failed checks: {details.get("failedChecks", 0)}')
+
+#     summary_text = '\n'.join(summary_info) if summary_info else 'No summary available'
+#     log.debug(f'summary_text, ``{summary_text}``')
+
+#     prompt = f"""You are an accessibility expert analyzing PDF/UA-1 validation results from veraPDF.
+
+# Based on the following validation summary, provide a brief, helpful explanation for a document author who wants to make their PDF accessible:
+
+# {summary_text}
+
+# Please:
+# 1. Explain what the results mean in plain language
+# 2. If there are failures, explain the most common types of issues and how to fix them
+# 3. Keep the response concise (2-3 paragraphs max)
+# 4. Be encouraging - even many failures often stem from just a few root causes
+
+# Note: The full veraPDF JSON contains detailed failure information, but focus on providing actionable guidance rather than listing every issue."""
+
+#     log.debug(f'prompt, ``{prompt}``')
+#     return prompt
 
 
 def call_openrouter(prompt: str, api_key: str) -> dict:
