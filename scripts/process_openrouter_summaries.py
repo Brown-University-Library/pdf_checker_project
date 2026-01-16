@@ -105,6 +105,7 @@ def build_prompt(verapdf_json: dict) -> str:
             summary_info.append(f'Failed checks: {details.get("failedChecks", 0)}')
 
     summary_text = '\n'.join(summary_info) if summary_info else 'No summary available'
+    log.debug(f'summary_text, ``{summary_text}``')
 
     prompt = f"""You are an accessibility expert analyzing PDF/UA-1 validation results from veraPDF.
 
@@ -120,6 +121,7 @@ Please:
 
 Note: The full veraPDF JSON contains detailed failure information, but focus on providing actionable guidance rather than listing every issue."""
 
+    log.debug(f'prompt, ``{prompt}``')
     return prompt
 
 
@@ -145,7 +147,9 @@ def call_openrouter(prompt: str, api_key: str) -> dict:
     with httpx.Client(timeout=OPENROUTER_TIMEOUT) as client:
         response = client.post(OPENROUTER_API_URL, headers=headers, json=payload)
         response.raise_for_status()
-        return response.json()
+        jsn_response = response.json()
+        log.debug(f'jsn_response, ``{jsn_response}``')
+        return jsn_response
 
 
 def parse_openrouter_response(response_json: dict) -> dict:
