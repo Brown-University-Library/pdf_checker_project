@@ -136,7 +136,7 @@ class OpenRouterSummaryAdmin(admin.ModelAdmin):
     ]
     fieldsets = [
         ('Document', {'fields': ['pdf_document']}),
-        ('Summary', {'fields': ['summary_text', 'status', 'error']}),
+        ('Summary', {'fields': ['summary_text', 'prompt', 'status', 'error']}),
         (
             'OpenRouter Metadata',
             {
