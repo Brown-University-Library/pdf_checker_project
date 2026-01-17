@@ -319,8 +319,8 @@ def process_single_summary(doc: PDFDocument, api_key: str) -> bool:
         log.debug(f'Calling OpenRouter for document {doc.pk}')
 
         ## Save prompt
-        summary.prompt_text = prompt
-        summary.save(update_fields=['prompt_text'])
+        summary.prompt = prompt
+        summary.save(update_fields=['prompt'])
 
         ## Call API
         response_json = call_openrouter(prompt, api_key)
