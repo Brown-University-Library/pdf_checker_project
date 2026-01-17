@@ -172,6 +172,47 @@ def build_prompt(verapdf_json: dict) -> str:
 #     return prompt
 
 
+def filter_down_failure_checks(raw_verapdf_json: dict) -> dict:
+    """
+    Filters down veraPDF JSON by keeping only one unique check per rule in 'checks' arrays.
+    Uses the same logic as the prune_checks() function from filter_down_failure_checks.py.
+    """
+    return prune_checks_recursive(raw_verapdf_json)
+
+
+def prune_checks_recursive(value: object) -> object:
+    """
+    Recursively processes the JSON, keeping one unique check per rule in 'checks' arrays.
+    """
+    pruned: object = value
+
+    if isinstance(value, dict):
+        new_dict: dict[str, object] = {}
+        for key, child in value.items():
+            if key == 'checks' and isinstance(child, list):
+                new_dict[key] = filter_unique_checks(child)
+            else:
+                new_dict[key] = prune_checks_recursive(child)
+        pruned = new_dict
+
+    elif isinstance(value, list):
+        new_list: list[object] = []
+        for child in value:
+            new_list.append(prune_checks_recursive(child))
+        pruned = new_list
+
+    return pruned
+
+
+def filter_unique_checks(checks: list[object]) -> list[object]:
+    """
+    Filters a checks array to keep only one representative check.
+    """
+    if len(checks) > 0:
+        return [checks[0]]
+    return []
+
+
 def call_openrouter(prompt: str, api_key: str) -> dict:
     """
     Calls the OpenRouter API with the given prompt.
@@ -242,6 +283,7 @@ def process_single_summary(doc: PDFDocument, api_key: str) -> bool:
     """
     Generates and saves an OpenRouter summary for a single document.
     Returns True on success, False on failure.
+    Called by process_summaries()
     """
     log.info(f'Processing summary for document {doc.pk} ({doc.original_filename})')
 
@@ -267,7 +309,10 @@ def process_single_summary(doc: PDFDocument, api_key: str) -> bool:
     try:
         ## Get veraPDF result
         verapdf_result = VeraPDFResult.objects.get(pdf_document=doc)
-        verapdf_json = verapdf_result.raw_json
+        raw_verapdf_json = verapdf_result.raw_json
+
+        ## Prune checks
+        verapdf_json = filter_down_failure_checks(raw_verapdf_json)
 
         ## Build prompt and call API
         prompt = build_prompt(verapdf_json)
