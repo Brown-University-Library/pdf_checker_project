@@ -92,6 +92,7 @@ class OpenRouterSummary(models.Model):
     ## Persistence fields
     raw_response_json = models.JSONField(null=True, blank=True)
     summary_text = models.TextField(blank=True)
+    prompt = models.TextField(blank=True)
 
     ## Identity/metadata fields (from OpenRouter response)
     openrouter_response_id = models.CharField(max_length=128, blank=True)
