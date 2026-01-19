@@ -1,6 +1,9 @@
 """
 Synchronous PDF processing helpers with timeout fallback.
 Handles veraPDF and OpenRouter processing attempts with graceful degradation.
+
+Called by:
+    - pdf_checker_app.views.upload_pdf()
 """
 
 import datetime

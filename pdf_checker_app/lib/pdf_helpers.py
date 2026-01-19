@@ -1,5 +1,10 @@
 """
 Helper functions for PDF processing.
+
+Called by:
+    - pdf_checker_app.views.upload_pdf() (file operations, checksum generation)
+    - pdf_checker_app.lib.sync_processing_helpers (synchronous veraPDF attempts)
+    - scripts.process_verapdf_jobs (cron background veraPDF processing)
 """
 
 import hashlib

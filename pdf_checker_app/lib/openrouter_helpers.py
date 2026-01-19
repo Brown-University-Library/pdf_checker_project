@@ -1,5 +1,9 @@
 """
 Helper functions for OpenRouter API integration.
+
+Called by:
+    - pdf_checker_app.lib.sync_processing_helpers (synchronous attempts)
+    - scripts.process_openrouter_summaries (cron background processing)
 """
 
 import json
