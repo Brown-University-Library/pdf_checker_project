@@ -6,7 +6,7 @@
 
 I used [codemerge][CM] to create a single-file from the [repo][RP] code, and uploaded that  file to ChatGPT.
 
-I then added the prompt below. Everything after the prompt is the plan it came up with.
+I then added the prompt below.
 
 Version: ChatGPT-5.2-extended-thinking.
 
