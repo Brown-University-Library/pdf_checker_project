@@ -13,6 +13,7 @@ import argparse
 import logging
 import os
 import sys
+from datetime import datetime, timedelta
 from pathlib import Path
 
 ## Django setup - must happen before importing Django models
@@ -39,13 +40,37 @@ def find_pending_jobs(batch_size: int) -> list[PDFDocument]:
     """
     Finds PDFDocument rows that need processing.
     Uses select_for_update with skip_locked to avoid double-processing.
+
+    Selection criteria:
+    - Always include 'pending' status
+    - Include 'processing' status only if processing_started_at is older than
+      RECOVER_STUCK_PROCESSING_AFTER_SECONDS (for crash recovery)
     """
+    recover_threshold_seconds = project_settings.RECOVER_STUCK_PROCESSING_AFTER_SECONDS
+    stuck_threshold = datetime.now() - timedelta(seconds=recover_threshold_seconds)
+
     with transaction.atomic():
-        jobs = list(
+        ## Get pending jobs
+        pending_jobs = list(
             PDFDocument.objects.select_for_update(skip_locked=True)
-            .filter(processing_status__in=['pending', 'processing'])
+            .filter(processing_status='pending')
             .order_by('uploaded_at')[:batch_size]
         )
+
+        ## Get stuck processing jobs (started long ago)
+        remaining_slots = batch_size - len(pending_jobs)
+        stuck_jobs: list[PDFDocument] = []
+        if remaining_slots > 0:
+            stuck_jobs = list(
+                PDFDocument.objects.select_for_update(skip_locked=True)
+                .filter(
+                    processing_status='processing',
+                    processing_started_at__lt=stuck_threshold,
+                )
+                .order_by('uploaded_at')[:remaining_slots]
+            )
+
+        jobs = pending_jobs + stuck_jobs
     return jobs
 
 
@@ -59,7 +84,8 @@ def process_single_job(doc: PDFDocument, verapdf_path: Path) -> bool:
     ## Mark as processing
     doc.processing_status = 'processing'
     doc.processing_error = None
-    doc.save(update_fields=['processing_status', 'processing_error'])
+    doc.processing_started_at = datetime.now()
+    doc.save(update_fields=['processing_status', 'processing_error', 'processing_started_at'])
 
     ## Resolve PDF path from checksum
     upload_dir = Path(project_settings.PDF_UPLOAD_PATH).resolve()
@@ -75,9 +101,10 @@ def process_single_job(doc: PDFDocument, verapdf_path: Path) -> bool:
 
     success = False
     try:
-        ## Run veraPDF
+        ## Run veraPDF with cron timeout
         log.debug(f'Running veraPDF on {pdf_path}')
-        verapdf_raw_json = pdf_helpers.run_verapdf(pdf_path, verapdf_path)
+        timeout_seconds = project_settings.VERAPDF_CRON_TIMEOUT_SECONDS
+        verapdf_raw_json = pdf_helpers.run_verapdf(pdf_path, verapdf_path, timeout_seconds=timeout_seconds)
 
         ## Parse output
         parsed_output = pdf_helpers.parse_verapdf_output(verapdf_raw_json)

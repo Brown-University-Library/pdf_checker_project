@@ -24,6 +24,7 @@ class PDFDocument(models.Model):
 
     ## Timestamps
     uploaded_at = models.DateTimeField(auto_now_add=True)
+    processing_started_at = models.DateTimeField(blank=True, null=True)
 
     ## Status tracking
     processing_status = models.CharField(

@@ -209,3 +209,14 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = 52428800  # 50MB
 
 ## Temp file storage
 PDF_UPLOAD_PATH = os.environ['PDF_UPLOAD_PATH']
+
+## Synchronous processing timeouts (web requests)
+VERAPDF_SYNC_TIMEOUT_SECONDS: float = 30.0
+OPENROUTER_SYNC_TIMEOUT_SECONDS: float = 30.0
+
+## Cron job timeouts (background processing - more patient)
+VERAPDF_CRON_TIMEOUT_SECONDS: float = 60.0
+OPENROUTER_CRON_TIMEOUT_SECONDS: float = 60.0
+
+## Stuck processing recovery threshold (10 minutes)
+RECOVER_STUCK_PROCESSING_AFTER_SECONDS: int = 600

@@ -17,6 +17,14 @@ from pdf_checker_app.models import VeraPDFResult
 log = logging.getLogger(__name__)
 
 
+class VeraPDFTimeoutError(Exception):
+    """
+    Raised when veraPDF execution exceeds the specified timeout.
+    """
+
+    pass
+
+
 def get_shibboleth_user_info(request) -> dict[str, str | list[str]]:
     """
     Extracts Shibboleth user information from request headers.
@@ -75,7 +83,7 @@ def save_pdf_file(file: UploadedFile, checksum: str) -> Path:
 #     return temp_path
 
 
-def run_verapdf(pdf_path: Path, verapdf_cli_path: Path) -> str:
+def run_verapdf(pdf_path: Path, verapdf_cli_path: Path, timeout_seconds: float | None = None) -> str:
     """
     Runs veraPDF on a temporary file and returns the raw-json-output.
     Called by views.upload_pdf().
@@ -87,6 +95,8 @@ def run_verapdf(pdf_path: Path, verapdf_cli_path: Path) -> str:
     --success (include success messages) -- disabled to reduce the size of the output
     str(pdf_path) (path to pdf)
 
+    Raises:
+        VeraPDFTimeoutError: If execution exceeds timeout_seconds.
     """
     ## build command ------------------------------------------------
     command: list[str] = [
@@ -101,15 +111,20 @@ def run_verapdf(pdf_path: Path, verapdf_cli_path: Path) -> str:
         str(pdf_path),
     ]
     ## run command --------------------------------------------------
-    completed_process = subprocess.run(
-        command,
-        cwd='.',
-        capture_output=True,
-        text=True,
-    )
-    output = str(completed_process.stdout)
-    log.debug(f'output, ``{output}``')
-    return output
+    try:
+        completed_process = subprocess.run(
+            command,
+            cwd='.',
+            capture_output=True,
+            text=True,
+            timeout=timeout_seconds,
+        )
+        output = str(completed_process.stdout)
+        log.debug(f'output, ``{output}``')
+        return output
+    except subprocess.TimeoutExpired as e:
+        log.warning(f'veraPDF timed out after {timeout_seconds} seconds for {pdf_path}')
+        raise VeraPDFTimeoutError(f'veraPDF execution exceeded {timeout_seconds} seconds') from e
 
 
 def parse_verapdf_output(raw_output: str) -> dict[str, object]:

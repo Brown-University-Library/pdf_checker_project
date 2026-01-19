@@ -11,7 +11,7 @@ from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 
 from pdf_checker_app.forms import PDFUploadForm
-from pdf_checker_app.lib import pdf_helpers, version_helper
+from pdf_checker_app.lib import pdf_helpers, sync_processing_helpers, version_helper
 from pdf_checker_app.lib.version_helper import GatherCommitAndBranchData
 from pdf_checker_app.models import OpenRouterSummary, PDFDocument, VeraPDFResult
 
@@ -176,8 +176,10 @@ def root(request):
 
 def upload_pdf(request):
     """
-    Handles PDF upload. Saves file and marks document as 'pending' for background processing.
-    Does NOT run veraPDF synchronously - that is handled by a cron-driven script.
+    Handles PDF upload with synchronous processing attempt.
+
+    Attempts to run veraPDF and OpenRouter synchronously with timeouts.
+    Falls back to polling + cron if timeouts are hit.
     """
     log.debug('starting upload_pdf()')
     if request.method == 'POST':
@@ -222,7 +224,7 @@ def upload_pdf(request):
                     processing_status='pending',
                 )
 
-            ## Save file for background processing
+            ## Save file
             try:
                 pdf_path = pdf_helpers.save_pdf_file(pdf_file, checksum)
                 log.debug(f'saved PDF file to {pdf_path}')
@@ -234,8 +236,14 @@ def upload_pdf(request):
                 messages.error(request, 'Failed to save PDF file. Please try again.')
                 return HttpResponseRedirect(reverse('pdf_report_url', kwargs={'pk': doc.pk}))
 
-            ## Redirect to report page - polling will show progress
-            messages.success(request, 'PDF uploaded successfully. Processing will begin shortly.')
+            ## Attempt synchronous processing
+            sync_processing_helpers.attempt_synchronous_processing(doc, pdf_path)
+
+            ## Redirect to report page
+            if doc.processing_status == 'completed':
+                messages.success(request, 'PDF processed successfully!')
+            else:
+                messages.success(request, 'PDF uploaded successfully. Processing in progress.')
             return HttpResponseRedirect(reverse('pdf_report_url', kwargs={'pk': doc.pk}))
     else:
         form = PDFUploadForm()
