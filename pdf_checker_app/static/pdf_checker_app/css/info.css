@@ -1,5 +1,5 @@
 /*
- File: info.css (formerly styles.css)
+ File: info.css
 
  Purpose
  - Styles the standalone /info/ page rendered by pdf_checker_app.views.info() using template info.html.
@@ -20,7 +20,8 @@ body {
 
 .info-container {
     background-color: #fff;
-    padding: 1.25rem; /* Equivalent to 20px if base font-size is 16px */
+    padding: 1.25rem;
+    /* Equivalent to 20px if base font-size is 16px */
     border-radius: 0.5rem;
     box-shadow: 0 0 0.625rem rgba(0, 0, 0, 0.1);
     width: 80%;

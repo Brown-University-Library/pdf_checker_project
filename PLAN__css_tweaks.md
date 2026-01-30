@@ -1,25 +1,25 @@
-# PLAN: CSS tweaks (styles.css scope + naming)
+# PLAN: CSS tweaks (info.css scope + naming)
 
 ## Current state (as of now)
 
-### Where `styles.css` is used
+### Where the standalone-page stylesheet is used
 
 - Template: `pdf_checker_app/pdf_checker_app_templates/info.html`
-- Loads: `{% static 'pdf_checker_app/css/styles.css' %}`
+- Loads: `{% static 'pdf_checker_app/css/info.css' %}`
 - View: `pdf_checker_app.views.info()`
 - URL: `/info/` (name: `info_url`)
 - Root `/` redirects to `/info/` via `views.root()`
 
-### Why `styles.css` is potentially confusing
+### Why a generic stylesheet name is potentially confusing
 
-- The filename `styles.css` is generic.
+- A generic stylesheet filename is easy to misuse.
 - The stylesheet currently appears to be **only** for the standalone `info.html` page.
 - It contains selectors like `.container` that are *not* compatible with the base-template UI (`base.css` also defines `.container`, but with different intent/layout).
 
 
-## Recommendation: rename `styles.css` to reflect scope
+## Recommendation: keep the stylesheet name scoped to the page
 
-### Option A (recommended): rename to `info.css`
+### Option A (recommended): `info.css`
 
 - Pros:
   - Immediately communicates that it’s for the `/info/` page.
@@ -27,28 +27,23 @@
 - Cons:
   - Requires updating any references (currently only `info.html`, but verify).
 
-## If renaming: implementation steps (future PR)
+## Implementation steps
 
-1. Rename file:
-   - From: `pdf_checker_app/static/pdf_checker_app/css/styles.css`
-   - To (example): `pdf_checker_app/static/pdf_checker_app/css/info.css`
-2. Update template reference in `info.html`:
+1. Ensure `info.html` references `info.css`:
    - `<link rel="stylesheet" href="{% static 'pdf_checker_app/css/info.css' %}">`
-3. Search and update any other references:
-   - Grep for `styles.css` across repo.
-4. Verify locally:
+2. Verify locally:
    - Load `/info/` and confirm layout/typography.
    - Load `/pdf_uploader/` and `/pdf/report/<uuid>/` and confirm no regressions.
-5. Optional safety check:
-   - If you run Django `collectstatic` in your deploy workflow, verify old `styles.css` isn’t referenced anywhere.
+3. Optional safety check:
+   - If you run Django `collectstatic` in your deploy workflow, verify no legacy stylesheet references remain.
 
 
-## Comments to add to the top of the (renamed or existing) stylesheet
+## Comments to add to the top of the stylesheet
 
 ### More explicit (recommended for reviewers)
 
 - `/*
--  File: info.css (formerly styles.css)
+-  File: info.css
 -
 -  Purpose
 -  - Styles the standalone /info/ page rendered by pdf_checker_app.views.info() using template info.html.
