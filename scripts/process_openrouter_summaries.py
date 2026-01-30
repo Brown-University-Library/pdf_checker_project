@@ -38,6 +38,7 @@ import django  # noqa: E402
 django.setup()
 
 from django.conf import settings as project_settings  # noqa: E402
+from django.db.models import Q  # noqa: E402
 from django.utils import timezone as django_timezone  # noqa: E402
 
 from pdf_checker_app.lib import openrouter_helpers  # noqa: E402
@@ -69,9 +70,12 @@ def find_pending_summaries(batch_size: int) -> list[PDFDocument]:
         .order_by('uploaded_at')[:batch_size]
     )
 
-    ## Find docs with pending summary
+    ## Find docs with pending or failed summary
     docs_with_pending_summary = (
-        PDFDocument.objects.filter(processing_status='completed', openrouter_summary__status='pending')
+        PDFDocument.objects.filter(
+            processing_status='completed',
+        )
+        .filter(Q(openrouter_summary__status='pending') | Q(openrouter_summary__status='failed'))
         .filter(verapdf_result__isnull=False)
         .order_by('uploaded_at')[:batch_size]
     )
