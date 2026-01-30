@@ -91,7 +91,9 @@ def save_pdf_file(file: UploadedFile, checksum: str) -> Path:
 def run_verapdf(pdf_path: Path, verapdf_cli_path: Path, timeout_seconds: float | None = None) -> str:
     """
     Runs veraPDF on a temporary file and returns the raw-json-output.
-    Called by views.upload_pdf().
+    Called by:
+        - pdf_checker_app.lib.sync_processing_helpers.attempt_verapdf_sync()
+        - scripts.process_verapdf_jobs.process_single_job()
 
     Command flags:
     -f ua1 (PDF/UA-1 validation profile)
@@ -187,7 +189,9 @@ def get_accessibility_assessment(raw_json: dict[str, object]) -> str | None:
     """
     Maps veraPDF compliance to an accessibility assessment label.
 
-    Called by: status_fragment()
+    Called by:
+        - status_fragment()
+        - view_report()
     """
     result: str | None = None
     compliant: bool | None = get_verapdf_compliant(raw_json)
