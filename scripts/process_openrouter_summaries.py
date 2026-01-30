@@ -87,14 +87,14 @@ def find_pending_summaries(batch_size: int) -> list[PDFDocument]:
     return result
 
 
-def get_model() -> str:
+def get_model_order() -> list[str]:
     """
-    Retrieves the OpenRouter model from environment.
+    Retrieves the OpenRouter model order from environment.
     """
-    return openrouter_helpers.get_model()
+    return openrouter_helpers.get_model_order()
 
 
-def process_single_summary(doc: PDFDocument, api_key: str, model: str) -> bool:
+def process_single_summary(doc: PDFDocument, api_key: str, model_order: list[str]) -> bool:
     """
     Generates and saves an OpenRouter summary for a single document.
     Returns True on success, False on failure.
@@ -139,7 +139,12 @@ def process_single_summary(doc: PDFDocument, api_key: str, model: str) -> bool:
 
         ## Call API with cron timeout
         timeout_seconds = project_settings.OPENROUTER_CRON_TIMEOUT_SECONDS
-        response_json = openrouter_helpers.call_openrouter(prompt, api_key, model, timeout_seconds)
+        response_json = openrouter_helpers.call_openrouter_with_model_order(
+            prompt,
+            api_key,
+            model_order,
+            timeout_seconds,
+        )
 
         ## Parse response
         parsed = openrouter_helpers.parse_openrouter_response(response_json)
@@ -169,9 +174,9 @@ def process_summaries(batch_size: int, dry_run: bool) -> tuple[int, int]:
         log.error('OPENROUTER_API_KEY environment variable not set')
         return (0, 0)
 
-    model = get_model()
-    if not model:
-        log.error('OPENROUTER_MODEL environment variable not set')
+    model_order = get_model_order()
+    if not model_order:
+        log.error('OPENROUTER_MODEL_ORDER or OPENROUTER_MODEL environment variable not set')
         return (0, 0)
 
     docs = find_pending_summaries(batch_size)
@@ -186,7 +191,7 @@ def process_summaries(batch_size: int, dry_run: bool) -> tuple[int, int]:
     failure_count = 0
 
     for doc in docs:
-        if process_single_summary(doc, api_key, model):
+        if process_single_summary(doc, api_key, model_order):
             success_count += 1
         else:
             failure_count += 1

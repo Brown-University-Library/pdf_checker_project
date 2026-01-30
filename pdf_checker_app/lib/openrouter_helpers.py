@@ -64,6 +64,19 @@ def get_model() -> str:
     return model
 
 
+def get_model_order() -> list[str]:
+    """
+    Retrieves the OpenRouter model order from environment.
+    """
+    raw_value: str = os.environ.get('OPENROUTER_MODEL_ORDER', '')
+    model_order = [model.strip() for model in raw_value.split(',') if model.strip()]
+    if not model_order:
+        fallback_model = get_model()
+        if fallback_model:
+            model_order = [fallback_model]
+    return model_order
+
+
 def filter_down_failure_checks(raw_verapdf_json: dict) -> dict:
     """
     Filters down veraPDF JSON by keeping only one unique check per rule in 'checks' arrays.
@@ -157,6 +170,35 @@ def call_openrouter(prompt: str, api_key: str, model: str, timeout_seconds: floa
         return jsn_response
 
     ## end def call_openrouter()
+
+
+def call_openrouter_with_model_order(
+    prompt: str,
+    api_key: str,
+    model_order: list[str],
+    timeout_seconds: float,
+) -> dict:
+    """
+    Calls OpenRouter with models in the provided order until one succeeds.
+    """
+    last_exception: Exception | None = None
+    response_json: dict = {}
+
+    for model in model_order:
+        try:
+            response_json = call_openrouter(prompt, api_key, model, timeout_seconds)
+            last_exception = None
+            break
+        except Exception as exc:
+            last_exception = exc
+            log.warning('OpenRouter call failed for model=%s, trying next if available', model)
+
+    if last_exception is not None:
+        raise last_exception
+
+    return response_json
+
+    ## end def call_openrouter_with_model_order()
 
 
 def parse_openrouter_response(response_json: dict) -> dict:
