@@ -211,7 +211,14 @@ def overwrite_verapdf_job_item_names(raw_json: dict[str, object]) -> None:
     Called by:
         - parse_verapdf_output()
     """
-    jobs = raw_json.get('jobs')
+    report_obj: object | None = raw_json.get('report')
+    report: dict[str, object]
+    if isinstance(report_obj, dict):
+        report = report_obj
+    else:
+        report = raw_json
+
+    jobs = report.get('jobs')
     if not isinstance(jobs, list):
         return
 
@@ -227,7 +234,9 @@ def overwrite_verapdf_job_item_names(raw_json: dict[str, object]) -> None:
         if not isinstance(name, str):
             continue
 
-        item_details['name'] = f'/path/to/pdf_uploads/{Path(name).name}'
+        new_name = f'/path/to/pdf_uploads/{Path(name).name}'
+        log.debug(f'overwriting veraPDF item name from ``{name}`` to ``{new_name}``')
+        item_details['name'] = new_name
 
 
 def save_verapdf_result(document_id: uuid.UUID, raw_json: dict[str, object]) -> VeraPDFResult:
