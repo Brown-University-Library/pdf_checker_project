@@ -155,7 +155,7 @@ def save_verapdf_result(document_id: uuid.UUID, raw_json: dict[str, object]) -> 
             'verapdf_version': 'unknown',
         },
     )
-    if not created:
+    if not created:  # exists; will overwrite
         result.raw_json = raw_json
         result.save(update_fields=['raw_json'])
     return result
