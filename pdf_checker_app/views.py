@@ -2,6 +2,7 @@ import datetime
 import json
 import logging
 import uuid
+from pathlib import Path
 
 import trio
 from django.conf import settings as project_settings
@@ -226,7 +227,7 @@ def upload_pdf(request: HttpRequest) -> HttpResponse:
 
             ## Save file
             try:
-                pdf_path: str = pdf_helpers.save_pdf_file(pdf_file, checksum)
+                pdf_path: Path = pdf_helpers.save_pdf_file(pdf_file, checksum)
                 log.debug(f'saved PDF file to {pdf_path}')
             except Exception as exc:
                 log.exception('Failed to save PDF file')
