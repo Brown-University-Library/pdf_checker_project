@@ -284,12 +284,15 @@ def view_report(request, pk: uuid.UUID):
     except OpenRouterSummary.DoesNotExist:
         pass
 
+    context = {
+        'document': doc,
+        'verapdf_raw_json': verapdf_raw_json,
+        'suggestions': suggestions,
+    }
+    log.debug(f'context, ``{context}``')
+
     return render(
         request,
         'pdf_checker_app/report.html',
-        {
-            'document': doc,
-            'verapdf_raw_json': verapdf_raw_json,
-            'suggestions': suggestions,
-        },
+        context,
     )
