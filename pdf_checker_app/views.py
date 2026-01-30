@@ -272,10 +272,18 @@ def view_report(request, pk: uuid.UUID):
     log.debug(f'starting view_report() for pk={pk}')
     doc = get_object_or_404(PDFDocument, pk=pk)
     verapdf_raw_json: str | None = None
+    assessment: str | None = None
+    verapdf_raw_json_data: dict[str, object] | None = None
     if doc.processing_status == 'completed':
-        verapdf_raw_json_data = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
-        if verapdf_raw_json_data is not None:
-            verapdf_raw_json = json.dumps(verapdf_raw_json_data, indent=2)
+        raw_json_data = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
+        if isinstance(raw_json_data, dict):
+            verapdf_raw_json_data = raw_json_data
+            verapdf_raw_json = json.dumps(raw_json_data, indent=2)
+        elif raw_json_data is not None:
+            verapdf_raw_json = json.dumps(raw_json_data, indent=2)
+
+    if verapdf_raw_json_data is not None:
+        assessment = pdf_helpers.get_accessibility_assessment(verapdf_raw_json_data)
 
     ## Get OpenRouter summary if it exists
     suggestions: OpenRouterSummary | None = None
@@ -287,6 +295,7 @@ def view_report(request, pk: uuid.UUID):
     context = {
         'document': doc,
         'verapdf_raw_json': verapdf_raw_json,
+        'assessment': assessment,
         'suggestions': suggestions,
     }
     log.debug(f'context, ``{context}``')
