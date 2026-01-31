@@ -255,6 +255,34 @@ class SummaryFragmentTest(TestCase):
         self.assertEqual(200, response.status_code)
         self.assertContains(response, 'Suggestions coming soon')
 
+    def test_summary_fragment_accessible_hides_section(self):
+        """
+        Checks that accessible PDFs do not render the suggestions section.
+        """
+        VeraPDFResult.objects.create(
+            pdf_document=self.document,
+            raw_json={
+                'report': {
+                    'jobs': [
+                        {
+                            'validationResult': [
+                                {
+                                    'compliant': True,
+                                }
+                            ],
+                        }
+                    ]
+                }
+            },
+            is_accessible=True,
+            validation_profile='PDF/UA-1',
+            verapdf_version='1.0',
+        )
+        url = reverse('summary_fragment_url', kwargs={'pk': self.test_uuid})
+        response = self.client.get(url)
+        self.assertEqual(200, response.status_code)
+        self.assertNotContains(response, 'Accessibility Improvement Suggestions')
+
     def test_summary_fragment_pending(self):
         """
         Checks that summary fragment shows pending state with polling.
