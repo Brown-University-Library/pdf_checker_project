@@ -1,5 +1,7 @@
 # Plan: Incorporate Pattern Header HTML
 
+Before changing any code, review `pdf_checker_project/AGENTS.md` for my coding-preferences.
+
 ## Context
 
 ### Current State
@@ -101,58 +103,7 @@ The pattern header contains placeholder URLs that will need dynamic generation:
 
 ### Option 2: Template Tag with File Read
 
-**Description**: Create a custom Django template tag that reads the pattern header from a file in `pdf_checker_app/lib/` at render time.
-
-**Implementation**:
-1. **File Location**: `pdf_checker_project/pdf_checker_app/lib/pattern_header.html`
-   - Rationale: Keeps the HTML in `lib/` as a data file, separate from Django templates
-
-2. **Template Tag**: Create `pdf_checker_project/pdf_checker_app/templatetags/pattern_tags.py`
-   ```python
-   import pathlib
-   from django import template
-   from django.utils.safestring import mark_safe
-
-   register = template.Library()
-
-   @register.simple_tag
-   def pattern_header() -> str:
-       """
-       Loads and returns the pattern header HTML.
-       """
-       header_path: pathlib.Path = pathlib.Path(__file__).resolve().parent.parent / 'lib' / 'pattern_header.html'
-       html_content: str = header_path.read_text(encoding='utf-8')
-       return mark_safe(html_content)
-   ```
-
-3. **Base Template Integration**:
-   ```django
-   {% load static %}
-   {% load pattern_tags %}
-   <!DOCTYPE html>
-   <html lang="en">
-   <head>
-       <!-- ... head content ... -->
-   </head>
-   <body>
-       {% pattern_header %}
-       
-       <div class="container">
-           <!-- ... rest of template ... -->
-       </div>
-   </body>
-   </html>
-   ```
-
-**Pros**:
-- Pattern header stored as a plain HTML file in `lib/`
-- Can be updated by script without touching Django template files
-- Centralizes the header content in one location
-
-**Cons**:
-- Adds I/O overhead (file read on every page render, though Django caching can mitigate this)
-- Requires creating custom template tag infrastructure
-- More complex than Option 1
+(I've removed Option-2 -- I want to use Option-1)
 
 ---
 
