@@ -3,7 +3,11 @@ OpenRouter summary fragment.
 Shows the LLM-generated summary when available.
 {% endcomment %}
 
-{% if suggestions and suggestions.status == 'completed' and suggestions.summary_text %}
+{% if assessment == 'accessible' %}
+{% comment %}
+Accessible PDFs do not need improvement suggestions.
+{% endcomment %}
+{% elif suggestions and suggestions.status == 'completed' and suggestions.summary_text %}
 <div id="summary-container" class="summary-section">
     <h2>Accessibility Improvement Suggestions</h2>
     <div class="summary-content">

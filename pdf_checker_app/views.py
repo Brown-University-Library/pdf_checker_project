@@ -98,11 +98,17 @@ def summary_fragment(request, pk: uuid.UUID):
     except OpenRouterSummary.DoesNotExist:
         pass
 
+    assessment: str | None = None
+    verapdf_raw_json = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
+    if isinstance(verapdf_raw_json, dict):
+        assessment = pdf_helpers.get_accessibility_assessment(verapdf_raw_json)
+
     response = render(
         request,
         'pdf_checker_app/fragments/summary_fragment.html',
         {
             'document': doc,
+            'assessment': assessment,
             'suggestions': suggestions,
         },
     )
