@@ -56,24 +56,12 @@ def get_api_key() -> str:
     return api_key
 
 
-def get_model() -> str:
-    """
-    Retrieves the OpenRouter model from environment.
-    """
-    model: str = os.environ.get('OPENROUTER_MODEL', '')
-    return model
-
-
 def get_model_order() -> list[str]:
     """
     Retrieves the OpenRouter model order from environment.
     """
     raw_value: str = os.environ.get('OPENROUTER_MODEL_ORDER', '')
     model_order = [model.strip() for model in raw_value.split(',') if model.strip()]
-    if not model_order:
-        fallback_model = get_model()
-        if fallback_model:
-            model_order = [fallback_model]
     return model_order
 
 

@@ -10,7 +10,7 @@ Usage:
 
 Requires:
     OPENROUTER_API_KEY environment variable to be set.
-    OPENROUTER_MODEL environment variable to be set.
+    OPENROUTER_MODEL_ORDER environment variable to be set.
 """
 
 import argparse
@@ -180,7 +180,7 @@ def process_summaries(batch_size: int, dry_run: bool) -> tuple[int, int]:
 
     model_order = get_model_order()
     if not model_order:
-        log.error('OPENROUTER_MODEL_ORDER or OPENROUTER_MODEL environment variable not set')
+        log.error('OPENROUTER_MODEL_ORDER environment variable not set')
         return (0, 0)
 
     docs = find_pending_summaries(batch_size)
