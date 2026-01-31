@@ -58,3 +58,42 @@ Avoid calling OpenRouter (sync and cron) when veraPDF reports the PDF is accessi
 ## Verification
 - Unit tests: `uv run ./run_tests.py` (confirmed passing).
 - Manual smoke: upload an accessible PDF and confirm suggestions are not generated (pending).
+
+---
+
+# Plan: Hide suggestions section for accessible PDFs
+
+## Goal
+When veraPDF marks the PDF as accessible, the report page should not render the “Accessibility Improvement Suggestions” section or its placeholder text.
+
+## Context snapshot (Jan 31, 2026)
+- The suggestions section is rendered via `pdf_checker_app/fragments/summary_fragment.html`, which always shows a fallback “Suggestions coming soon.” block when there is no summary.
+- `report.html` always includes the summary fragment: `{% include "pdf_checker_app/fragments/summary_fragment.html" %}`.
+- `view_report()` already computes `assessment` with `pdf_helpers.get_accessibility_assessment()` and passes it to the template context.
+- `summary_fragment()` passes `document` and `suggestions` only; it does not pass `assessment` or accessibility status.
+
+## Relevant code locations
+- `pdf_checker_app/pdf_checker_app_templates/pdf_checker_app/report.html`
+- `pdf_checker_app/pdf_checker_app_templates/pdf_checker_app/fragments/summary_fragment.html`
+- `pdf_checker_app/views.py` (`view_report()` and `summary_fragment()`)
+
+## Plan
+1. **Expose accessibility state to templates**
+   - Option A (preferred): pass `assessment` (or `is_accessible`) into `summary_fragment()` and the fragment context so it can decide to render nothing when accessible.
+   - Option B: in `report.html`, conditionally include the summary fragment only when `assessment != 'accessible'`.
+
+2. **Update template conditional**
+   - If using Option A, wrap the summary fragment contents with a guard:
+     - Only render the section when the PDF is not accessible.
+   - Keep the existing status-specific blocks for pending/processing/failed/completed in the non-accessible case.
+
+3. **Tests to add/adjust**
+   - `test_polling_endpoints.py`: add a case ensuring the summary fragment returns empty (or no suggestions section) when the document is accessible.
+   - If using `report.html` guard only, add a view test to ensure the report page omits the suggestions section for accessible PDFs.
+
+## Implementation notes
+- Reuse existing `assessment` values: `accessible` vs `not-accessible`.
+- Keep the summary fragment behavior unchanged for non-accessible PDFs.
+
+## Suggested verification
+- Manual: load report for an accessible PDF and confirm the “Accessibility Improvement Suggestions” section is absent.
