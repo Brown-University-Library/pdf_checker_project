@@ -2,6 +2,22 @@
 
 Before changing any code, review `pdf_checker_project/AGENTS.md` for my coding-preferences.
 
+## Implementation Status (as of now)
+
+Completed:
+- Added `pdf_checker_app/pdf_checker_app_templates/pdf_checker_app/includes/pattern_header.html` (header markup without the external stylesheet link).
+- Updated `pdf_checker_app/pdf_checker_app_templates/pdf_checker_app/base.html` to:
+  - include the external `bul_patterns.css` stylesheet in `<head>`
+  - include the pattern header partial at the start of `<body>`.
+- Created management command `pdf_checker_app/management/commands/update_pattern_header.py`.
+- Added `PATTERN_HEADER_URL` to `config/settings.py` (safe default) and `config/settings_ci_tests.py` (blank default).
+- Added management package `__init__.py` files under `pdf_checker_app/management/` and `pdf_checker_app/management/commands/`.
+
+Remaining:
+- Add `PATTERN_HEADER_URL` to `.env` (if not already present).
+- Run the update command manually when you want to pull a fresh header:
+  - `uv run ./manage.py update_pattern_header`
+
 ## Context
 
 ### Current State

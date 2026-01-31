@@ -208,6 +208,9 @@ TEST_RUNNER: str = 'django.test.runner.DiscoverRunner'
 
 ## app-level settings -----------------------------------------------
 
+## Pattern header configuration
+PATTERN_HEADER_URL: str = ''
+
 ## veraPDF Configuration
 # VERAPDF_PATH = os.environ['VERAPDF_PATH']
 # VERAPDF_PROFILE = os.environ['VERAPDF_PROFILE']  # for now using `PDFUA_1_MACHINE`

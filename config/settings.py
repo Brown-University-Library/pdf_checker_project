@@ -199,6 +199,9 @@ LOGGING: dict[str, object] = {
 
 ## app-level settings -----------------------------------------------
 
+## Pattern header configuration
+PATTERN_HEADER_URL: str = os.environ.get('PATTERN_HEADER_URL', '')
+
 ## veraPDF Configuration
 VERAPDF_PATH: str = os.environ['VERAPDF_PATH']
 VERAPDF_PROFILE: str = os.environ['VERAPDF_PROFILE']  # for now using `PDFUA_1_MACHINE`
