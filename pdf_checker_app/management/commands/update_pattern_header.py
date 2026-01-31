@@ -19,15 +19,35 @@ def fetch_pattern_header(url: str) -> str:
     return response.text
 
 
-def resolve_target_path() -> pathlib.Path:
+def resolve_target_paths() -> tuple[pathlib.Path, pathlib.Path, pathlib.Path]:
     """
-    Resolves the target path for the pattern header include.
+    Resolves the target paths for the pattern header files.
     """
     app_dir: pathlib.Path = pathlib.Path(__file__).resolve().parent.parent.parent
-    target_path: pathlib.Path = (
-        app_dir / 'pdf_checker_app_templates' / 'pdf_checker_app' / 'includes' / 'pattern_header.html'
-    )
-    return target_path
+    upstream_path: pathlib.Path = app_dir / 'lib' / 'pattern_header_upstream.html'
+    template_dir: pathlib.Path = app_dir / 'pdf_checker_app_templates' / 'pdf_checker_app' / 'includes' / 'pattern_header'
+    head_path: pathlib.Path = template_dir / 'head.html'
+    body_path: pathlib.Path = template_dir / 'body.html'
+    return upstream_path, head_path, body_path
+
+
+def split_pattern_header(content: str) -> tuple[str, str]:
+    """
+    Splits the upstream pattern header into head and body fragments.
+    """
+    target_link = '<link rel="stylesheet" href="https://dlibwwwcit.services.brown.edu/common/css/bul_patterns.css"/>'
+    target_line = f'{target_link}\n'
+    head_content = ''
+    body_content = content
+
+    if target_line in content:
+        head_content = f'{target_link}\n'
+        body_content = content.replace(target_line, '', 1)
+    elif target_link in content:
+        head_content = f'{target_link}\n'
+        body_content = content.replace(target_link, '', 1)
+
+    return head_content, body_content
 
 
 def save_pattern_header(content: str, target_path: pathlib.Path) -> None:
@@ -73,7 +93,7 @@ class Command(BaseCommand):
             return
 
         dry_run = bool(options_dict.get('dry_run'))
-        target_path = resolve_target_path()
+        upstream_path, head_path, body_path = resolve_target_paths()
 
         self.stdout.write(f'Fetching pattern header from: {url}')
         try:
@@ -83,9 +103,15 @@ class Command(BaseCommand):
             return
 
         self.stdout.write(f'Fetched {len(content)} characters')
+        head_content, body_content = split_pattern_header(content)
+
         if dry_run:
             self.stdout.write(self.style.WARNING('Dry run - not saving'))
             return
 
-        save_pattern_header(content, target_path)
-        self.stdout.write(self.style.SUCCESS(f'Saved to: {target_path}'))
+        save_pattern_header(content, upstream_path)
+        save_pattern_header(head_content, head_path)
+        save_pattern_header(body_content, body_path)
+        self.stdout.write(self.style.SUCCESS(f'Saved upstream snapshot to: {upstream_path}'))
+        self.stdout.write(self.style.SUCCESS(f'Saved head include to: {head_path}'))
+        self.stdout.write(self.style.SUCCESS(f'Saved body include to: {body_path}'))
