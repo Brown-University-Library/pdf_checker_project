@@ -29,6 +29,11 @@ The pattern header contains placeholder URLs that will need dynamic generation:
 - Prefer single-return functions, no nested function definitions
 - Triple-quoted docstrings in present tense
 
+### Plan Notes / Corrections (from review)
+- The upstream `pattern_header_html.html` begins with a `<link rel="stylesheet" ...>` tag. If we include the entire file in the `<body>`, that `<link>` will end up in the body, which is invalid HTML (most browsers tolerate it, but it is better to place stylesheet links in the `<head>`).
+- If you choose the **standalone script** route, reading `PATTERN_HEADER_URL` from `.env` will require the script to load `.env` explicitly (because it won’t automatically run Django’s settings module). The **management command** path avoids this because `manage.py` imports settings, and settings already loads `.env`.
+- The example code snippets use some early-returns. That’s fine for a plan, but during implementation we should try to keep closer to your “prefer single-return functions” directive where practical.
+
 ---
 
 ## Approach Options
@@ -42,7 +47,11 @@ The pattern header contains placeholder URLs that will need dynamic generation:
    - Rationale: Keeps template partials organized in an `includes/` subdirectory within the app's template folder
    - Follows Django convention for reusable template fragments
 
-2. **Base Template Integration**:
+2. **Handle the upstream `<link>` tag** (recommended adjustment):
+   - **Preferred**: move the upstream stylesheet `<link>` line(s) into `base.html`’s `<head>` (or into a second include like `includes/pattern_header_head.html` included in the head), and keep the rest of the header markup in `includes/pattern_header.html` included in the body.
+   - **Acceptable shortcut**: include the upstream file as-is at the top of `<body>` and rely on browser tolerance (simpler, but less correct HTML).
+
+3. **Base Template Integration** (assuming we keep `pattern_header.html` as a body include):
    ```django
    {% load static %}
    <!DOCTYPE html>
@@ -172,6 +181,23 @@ import sys
 import httpx
 
 
+def load_dotenv_for_script() -> None:
+    """
+    Loads the project's .env file.
+
+    Note: This is needed for standalone scripts because Django settings (which already load .env)
+    are not imported.
+    """
+    import pathlib
+
+    from dotenv import find_dotenv, load_dotenv
+
+    ## Match config/settings.py behavior: .env is expected one level above pdf_checker_project/
+    project_root: pathlib.Path = pathlib.Path(__file__).resolve().parent.parent
+    dotenv_path: pathlib.Path = project_root.parent / '.env'
+    load_dotenv(find_dotenv(str(dotenv_path), raise_error_if_not_found=True), override=True)
+
+
 def fetch_pattern_header(url: str) -> str:
     """
     Fetches pattern header HTML from the given URL.
@@ -198,6 +224,8 @@ def main() -> None:
     parser.add_argument('--dry-run', action='store_true', help='Fetch but do not save')
     args = parser.parse_args()
     
+    load_dotenv_for_script()
+
     ## Get URL from args or environment
     import os
     url: str = args.url or os.environ.get('PATTERN_HEADER_URL', '')
@@ -209,7 +237,7 @@ def main() -> None:
     ## For Option 1: pdf_checker_app/pdf_checker_app_templates/pdf_checker_app/includes/pattern_header.html
     ## For Option 2: pdf_checker_app/lib/pattern_header.html
     project_root: pathlib.Path = pathlib.Path(__file__).resolve().parent.parent
-    target_path: pathlib.Path = project_root / 'pdf_checker_app' / 'lib' / 'pattern_header.html'
+    target_path: pathlib.Path = project_root / 'pdf_checker_app' / 'pdf_checker_app_templates' / 'pdf_checker_app' / 'includes' / 'pattern_header.html'
     
     ## Fetch content
     print(f'Fetching pattern header from: {url}')
@@ -292,6 +320,9 @@ class Command(BaseCommand):
         """
         Executes the command.
         """
+        ## manage.py loads Django settings, and settings loads .env.
+        ## So PATTERN_HEADER_URL should already be available here.
+
         ## Get URL
         url: str = options.get('url') or os.environ.get('PATTERN_HEADER_URL', '')
         if not url:
@@ -300,7 +331,7 @@ class Command(BaseCommand):
         
         ## Determine target path
         app_dir: pathlib.Path = pathlib.Path(__file__).resolve().parent.parent.parent
-        target_path: pathlib.Path = app_dir / 'lib' / 'pattern_header.html'
+        target_path: pathlib.Path = app_dir / 'pdf_checker_app_templates' / 'pdf_checker_app' / 'includes' / 'pattern_header.html'
         
         ## Fetch content
         self.stdout.write(f'Fetching pattern header from: {url}')
@@ -370,6 +401,12 @@ Copy the external file to the includes directory:
 cp /Users/birkin/Documents/Brown_Library/djangoProjects/pdf_checker_stuff/pattern_header_html.html \
    pdf_checker_project/pdf_checker_app/pdf_checker_app_templates/pdf_checker_app/includes/pattern_header.html
 ```
+
+If you adopt the “move `<link>` into `<head>`” adjustment, do one of these:
+- Edit the copied `pattern_header.html` and remove the first `<link>` line, then add that `<link>` to `base.html`’s `<head>`.
+- Or split into two includes:
+  - `includes/pattern_header_head.html` (stylesheet link)
+  - `includes/pattern_header.html` (everything else)
 
 ### Step 3: Create Management Command
 Create `pdf_checker_project/pdf_checker_app/management/__init__.py` (empty file)
@@ -514,6 +551,9 @@ class UpdatePatternHeaderTests(TestCase):
 - Dynamic URLs are placeholders for now (future work)
 - Follow AGENTS.md conventions for any code changes
 
+### Security Note
+- Treat the remote `PATTERN_HEADER_URL` content as **trusted** input only. The header contains inline JavaScript, and the update script will write it into a template that is served to users. If the remote source can be tampered with, this becomes a supply-chain XSS risk.
+
 ### Common Issues
 - If header doesn't appear: check template include path
 - If CSS doesn't load: verify external URL is accessible
@@ -532,3 +572,28 @@ Before implementation, decide:
 3. **File location for pattern header**:
    - If Option 1: `pdf_checker_app_templates/pdf_checker_app/includes/pattern_header.html`
    - If Option 2: `pdf_checker_app/lib/pattern_header.html`
+
+---
+
+## Questions / Issues to Consider (for implementation)
+
+1. **Where should the upstream stylesheet `<link>` live?**
+   - In `<head>` (recommended) vs leaving it in the upstream fragment and including it in `<body>`.
+
+2. **Do you want the update mechanism to write into templates or into a “source-of-truth” file?**
+   - If you want a cleaner separation, we could store the downloaded upstream HTML in `pdf_checker_app/lib/pattern_header_upstream.html` and maintain a small template partial that includes/embeds it.
+   - This would require either:
+     - a template tag (Option 2), or
+     - a build step that copies `lib/pattern_header_upstream.html` into the templates include file.
+
+3. **Do you need a “pin” / reproducibility mechanism?**
+   - Example: store `ETag`/`Last-Modified` response headers alongside the downloaded file, or log them, so you can tell what version is deployed.
+
+4. **What environments should allow fetching remote HTML?**
+   - Dev-only? Allow in prod? If prod, consider whether outbound network access is permitted.
+
+5. **CSP considerations**
+   - If you deploy with a strict Content Security Policy, inline `<script>` in the header will be blocked unless you allow `'unsafe-inline'` or use nonces/hashes.
+
+6. **Accessibility / semantics**
+   - Confirm that the skip-link targets (`#bul_pl_header_end`, etc.) don’t conflict with IDs elsewhere in your pages.
