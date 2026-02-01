@@ -37,6 +37,12 @@ Move the OpenRouter prompt currently embedded in `pdf_checker_app/lib/openrouter
 5. **Update docs**
    - Update `pdf_checker_project/README.md` to reflect the new github prompt location -- and no need to have the link be a permalink.
 
+## Implementation status
+- Completed steps 1-5.
+- New prompt file: `pdf_checker_app/lib/prompt.md`.
+- `openrouter_helpers.py` now loads the prompt template from disk.
+- README links to `prompt.md`.
+
 ## Notes for future session
 - The prompt text is currently in `openrouter_helpers.py` as `PROMPT` (lines 23-48).
 - `build_prompt()` currently formats the prompt with `json.dumps(..., indent=2)` and `.format()`.
