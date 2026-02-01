@@ -13,7 +13,7 @@ class PatternHeaderSplitTest(TestCase):
         """
         Checks split_pattern_header() extracts the bul_patterns.css link tag.
         """
-        link_tag = '<link rel="stylesheet" href="https://dlibwwwcit.services.brown.edu/common/css/bul_patterns.css" />'
+        link_tag = '<link rel="stylesheet" href="https://library.brown.edu/common/css/bul_patterns.css" />'
         content = '\n'.join(
             [
                 '<!-- begin bul_pl_header -->',
@@ -31,7 +31,7 @@ class PatternHeaderSplitTest(TestCase):
         self.assertIsNotNone(parsed_link)
         self.assertEqual(
             parsed_link.get('href'),
-            'https://dlibwwwcit.services.brown.edu/common/css/bul_patterns.css',
+            'https://library.brown.edu/common/css/bul_patterns.css',
         )
         self.assertEqual(parsed_link.get('rel'), ['stylesheet'])
         self.assertNotIn('bul_patterns.css', body_content)
@@ -41,7 +41,7 @@ class PatternHeaderSplitTest(TestCase):
         """
         Checks split_pattern_header() preserves Django template tags.
         """
-        link_tag = '<link rel="stylesheet" href="https://dlibwwwcit.services.brown.edu/common/css/bul_patterns.css" />'
+        link_tag = '<link rel="stylesheet" href="https://library.brown.edu/common/css/bul_patterns.css" />'
         content = '\n'.join(
             [
                 '<!-- begin bul_pl_header -->',
@@ -55,3 +55,30 @@ class PatternHeaderSplitTest(TestCase):
 
         self.assertIn(link_tag, head_content)
         self.assertIn('{% url "info_url" %}', body_content)
+
+    def test_split_pattern_header_extracts_link_tag_with_query(self) -> None:
+        """
+        Checks split_pattern_header() extracts a link tag with query params.
+        """
+        link_tag = '<link href="https://static.brown.edu/common/css/bul_patterns.css?v=3" rel="stylesheet">'
+        content = '\n'.join(
+            [
+                '<!-- begin bul_pl_header -->',
+                link_tag,
+                '<div id="bul_pl_header_begin">',
+                'header content',
+                '</div>',
+            ]
+        )
+
+        head_content, body_content = update_pattern_header.split_pattern_header(content)
+
+        head_soup = BeautifulSoup(head_content, 'html.parser')
+        parsed_link = head_soup.find('link')
+        self.assertIsNotNone(parsed_link)
+        self.assertEqual(
+            parsed_link.get('href'),
+            'https://static.brown.edu/common/css/bul_patterns.css?v=3',
+        )
+        self.assertEqual(parsed_link.get('rel'), ['stylesheet'])
+        self.assertNotIn('bul_patterns.css', body_content)

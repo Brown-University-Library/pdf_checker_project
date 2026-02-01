@@ -59,7 +59,7 @@ def split_pattern_header(content: str) -> tuple[str, str]:
     head_content = ''
     body_content = content
     link_pattern = re.compile(
-        r'(<link\s+[^>]*href=[\'\"]https://dlibwwwcit.services.brown.edu/common/css/bul_patterns\.css[\'\"][^>]*>)',
+        r'(<link\s+[^>]*href=[\'\"]https://[^\'\"]+/common/css/bul_patterns\.css(?:\?[^\'\"]*)?[\'\"][^>]*>)',
         re.IGNORECASE,
     )
     match = link_pattern.search(content)
