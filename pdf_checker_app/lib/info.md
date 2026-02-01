@@ -1,4 +1,4 @@
-# About the PDF Accessibility Checker
+# About the experimental PDF Accessibility Checker
 
 - [Purpose](#purpose)
 - [Limitations](#limitations)
