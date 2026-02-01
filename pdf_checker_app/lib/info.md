@@ -70,7 +70,7 @@ This webapp runs veraPDF on the uploaded PDF. If failed checks are found, it par
 
 - it asks for the best bang-for-the-buck suggestions so as not to overwhelm users.
 
-Here is a [version of the prompt][prompt] (we'll be experimenting with it).
+Here's the [current prompt][prompt]. It will likely change over time as we experiment.
 
 ---
 
@@ -91,6 +91,6 @@ Let us know via the feedback link on each page if you have any problems or quest
 [ccv]: <https://ccv.brown.edu/>
 [oit]: <https://it.brown.edu/>
 [or]: <https://openrouter.ai/>
-[prompt]: <https://github.com/Brown-University-Library/pdf_checker_project/blob/55eb02862fb5802e40aae3ba63f59333b83e7b28/pdf_checker_app/lib/openrouter_helpers.py#L23-L48>
+[prompt]: <https://github.com/Brown-University-Library/pdf_checker_project/blob/main/pdf_checker_app/lib/prompt.md>
 [vpdf_demo]: <https://demo.verapdf.org/>
 [vpdf]: <https://verapdf.org/>
