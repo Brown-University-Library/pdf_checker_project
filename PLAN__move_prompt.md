@@ -34,6 +34,9 @@ Move the OpenRouter prompt currently embedded in `pdf_checker_app/lib/openrouter
    - Run `uv run ./run_tests.py`.
    - Optionally add a focused test for `build_prompt()` to ensure `{verapdf_json_output}` is interpolated.
 
+5. **Update docs**
+   - Update `pdf_checker_project/README.md` to reflect the new github prompt location -- and no need to have the link be a permalink.
+
 ## Notes for future session
 - The prompt text is currently in `openrouter_helpers.py` as `PROMPT` (lines 23-48).
 - `build_prompt()` currently formats the prompt with `json.dumps(..., indent=2)` and `.format()`.
