@@ -18,107 +18,14 @@ from pdf_checker_app.models import OpenRouterSummary, PDFDocument, VeraPDFResult
 
 log = logging.getLogger(__name__)
 
-# -------------------------------------------------------------------
-# htmx fragment endpoints for polling
-# -------------------------------------------------------------------
-
-
-def status_fragment(request, pk: uuid.UUID):
-    """
-    Returns a small HTML fragment for the status area.
-    Used by htmx polling on the report page.
-    Stops polling when processing is complete or failed.
-    """
-    log.debug(f'starting status_fragment() for pk={pk}')
-    doc = get_object_or_404(PDFDocument, pk=pk)
-
-    assessment: str | None = None
-    if doc.processing_status == 'completed':
-        verapdf_raw_json_data = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
-        if isinstance(verapdf_raw_json_data, dict):
-            assessment = pdf_helpers.get_accessibility_assessment(verapdf_raw_json_data)
-    log.debug(f'assessment, ``{assessment}``')
-
-    ## Determine if we should continue polling
-    is_terminal = doc.processing_status in ('completed', 'failed')
-
-    context = {
-        'document': doc,
-        'is_terminal': is_terminal,
-        'assessment': assessment,
-    }
-    log.debug(f'context, ``{context}``')
-
-    response = render(
-        request,
-        'pdf_checker_app/fragments/status_fragment.html',
-        context,
-    )
-    response['Cache-Control'] = 'no-store'
-    return response
-
-
-def verapdf_fragment(request, pk: uuid.UUID):
-    """
-    Returns an HTML fragment for the veraPDF results section.
-    Called once when status indicates veraPDF is ready.
-    """
-    log.debug(f'starting verapdf_fragment() for pk={pk}')
-    doc = get_object_or_404(PDFDocument, pk=pk)
-
-    verapdf_raw_json: str | None = None
-    if doc.processing_status == 'completed':
-        verapdf_raw_json_data = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
-        if verapdf_raw_json_data is not None:
-            verapdf_raw_json = json.dumps(verapdf_raw_json_data, indent=2)
-
-    response = render(
-        request,
-        'pdf_checker_app/fragments/verapdf_fragment.html',
-        {
-            'document': doc,
-            'verapdf_raw_json': verapdf_raw_json,
-        },
-    )
-    response['Cache-Control'] = 'no-store'
-    return response
-
-
-def summary_fragment(request, pk: uuid.UUID):
-    """
-    Returns an HTML fragment for the OpenRouter summary section.
-    Can be polled or loaded once depending on UX preference.
-    """
-    log.debug(f'starting summary_fragment() for pk={pk}')
-    doc = get_object_or_404(PDFDocument, pk=pk)
-
-    suggestions: OpenRouterSummary | None = None
-    try:
-        suggestions = doc.openrouter_summary
-    except OpenRouterSummary.DoesNotExist:
-        pass
-
-    assessment: str | None = None
-    verapdf_raw_json = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
-    if isinstance(verapdf_raw_json, dict):
-        assessment = pdf_helpers.get_accessibility_assessment(verapdf_raw_json)
-
-    response = render(
-        request,
-        'pdf_checker_app/fragments/summary_fragment.html',
-        {
-            'document': doc,
-            'assessment': assessment,
-            'suggestions': suggestions,
-        },
-    )
-    response['Cache-Control'] = 'no-store'
-    return response
-
 
 # -------------------------------------------------------------------
 # main urls
 # -------------------------------------------------------------------
+
+
+def root(request):
+    return HttpResponseRedirect(reverse('info_url'))
 
 
 def info(request):
@@ -144,52 +51,6 @@ def info(request):
         log.debug('building template response')
         resp = render(request, 'info.html', context)
     return resp
-
-
-# -------------------------------------------------------------------
-# support urls
-# -------------------------------------------------------------------
-
-
-def error_check(request):
-    """
-    Offers an easy way to check that admins receive error-emails (in development).
-    To view error-emails in runserver-development:
-    - run, in another terminal window: `python -m smtpd -n -c DebuggingServer localhost:1026`,
-    - (or substitue your own settings for localhost:1026)
-    """
-    log.debug('starting error_check()')
-    log.debug(f'project_settings.DEBUG, ``{project_settings.DEBUG}``')
-    if project_settings.DEBUG is True:  # localdev and dev-server; never production
-        log.debug('triggering exception')
-        raise Exception('Raising intentional exception to check email-admins-on-error functionality.')
-    else:
-        log.debug('returning 404')
-        return HttpResponseNotFound('<div>404 / Not Found</div>')
-
-
-def version(request):
-    """
-    Returns basic branch and commit data.
-    """
-    log.debug('starting version()')
-    rq_now = datetime.datetime.now()
-    gatherer = GatherCommitAndBranchData()
-    trio.run(gatherer.manage_git_calls)
-    info_txt = f'{gatherer.branch} {gatherer.commit}'
-    context = version_helper.make_context(request, rq_now, info_txt)
-    output = json.dumps(context, sort_keys=True, indent=2)
-    log.debug(f'output, ``{output}``')
-    return HttpResponse(output, content_type='application/json; charset=utf-8')
-
-
-def root(request):
-    return HttpResponseRedirect(reverse('info_url'))
-
-
-# -------------------------------------------------------------------
-# pdf upload and processing
-# -------------------------------------------------------------------
 
 
 def upload_pdf(request: HttpRequest) -> HttpResponse:
@@ -311,3 +172,138 @@ def view_report(request, pk: uuid.UUID):
         'pdf_checker_app/report.html',
         context,
     )
+
+
+# -------------------------------------------------------------------
+# htmx fragment endpoints for polling
+# -------------------------------------------------------------------
+
+
+def status_fragment(request, pk: uuid.UUID):
+    """
+    Returns a small HTML fragment for the status area.
+    Used by htmx polling on the report page.
+    Stops polling when processing is complete or failed.
+    """
+    log.debug(f'starting status_fragment() for pk={pk}')
+    doc = get_object_or_404(PDFDocument, pk=pk)
+
+    assessment: str | None = None
+    if doc.processing_status == 'completed':
+        verapdf_raw_json_data = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
+        if isinstance(verapdf_raw_json_data, dict):
+            assessment = pdf_helpers.get_accessibility_assessment(verapdf_raw_json_data)
+    log.debug(f'assessment, ``{assessment}``')
+
+    ## Determine if we should continue polling
+    is_terminal = doc.processing_status in ('completed', 'failed')
+
+    context = {
+        'document': doc,
+        'is_terminal': is_terminal,
+        'assessment': assessment,
+    }
+    log.debug(f'context, ``{context}``')
+
+    response = render(
+        request,
+        'pdf_checker_app/fragments/status_fragment.html',
+        context,
+    )
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+def verapdf_fragment(request, pk: uuid.UUID):
+    """
+    Returns an HTML fragment for the veraPDF results section.
+    Called once when status indicates veraPDF is ready.
+    """
+    log.debug(f'starting verapdf_fragment() for pk={pk}')
+    doc = get_object_or_404(PDFDocument, pk=pk)
+
+    verapdf_raw_json: str | None = None
+    if doc.processing_status == 'completed':
+        verapdf_raw_json_data = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
+        if verapdf_raw_json_data is not None:
+            verapdf_raw_json = json.dumps(verapdf_raw_json_data, indent=2)
+
+    response = render(
+        request,
+        'pdf_checker_app/fragments/verapdf_fragment.html',
+        {
+            'document': doc,
+            'verapdf_raw_json': verapdf_raw_json,
+        },
+    )
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+def summary_fragment(request, pk: uuid.UUID):
+    """
+    Returns an HTML fragment for the OpenRouter summary section.
+    Can be polled or loaded once depending on UX preference.
+    """
+    log.debug(f'starting summary_fragment() for pk={pk}')
+    doc = get_object_or_404(PDFDocument, pk=pk)
+
+    suggestions: OpenRouterSummary | None = None
+    try:
+        suggestions = doc.openrouter_summary
+    except OpenRouterSummary.DoesNotExist:
+        pass
+
+    assessment: str | None = None
+    verapdf_raw_json = VeraPDFResult.objects.filter(pdf_document=doc).values_list('raw_json', flat=True).first()
+    if isinstance(verapdf_raw_json, dict):
+        assessment = pdf_helpers.get_accessibility_assessment(verapdf_raw_json)
+
+    response = render(
+        request,
+        'pdf_checker_app/fragments/summary_fragment.html',
+        {
+            'document': doc,
+            'assessment': assessment,
+            'suggestions': suggestions,
+        },
+    )
+    response['Cache-Control'] = 'no-store'
+    return response
+
+
+# -------------------------------------------------------------------
+# support urls
+# -------------------------------------------------------------------
+
+
+def error_check(request):
+    """
+    Offers an easy way to check that admins receive error-emails (in development).
+    To view error-emails in runserver-development:
+    - run, in another terminal window: `python -m smtpd -n -c DebuggingServer localhost:1026`,
+    - (or substitue your own settings for localhost:1026)
+    """
+    log.debug('starting error_check()')
+    log.debug(f'project_settings.DEBUG, ``{project_settings.DEBUG}``')
+    if project_settings.DEBUG is True:  # localdev and dev-server; never production
+        log.debug('triggering exception')
+        raise Exception('Raising intentional exception to check email-admins-on-error functionality.')
+    else:
+        log.debug('returning 404')
+        return HttpResponseNotFound('<div>404 / Not Found</div>')
+
+
+def version(request):
+    """
+    Returns basic branch and commit data.
+    """
+    log.debug('starting version()')
+    rq_now = datetime.datetime.now()
+    gatherer = GatherCommitAndBranchData()
+    trio.run(gatherer.manage_git_calls)
+    info_txt = f'{gatherer.branch} {gatherer.commit}'
+    context = version_helper.make_context(request, rq_now, info_txt)
+    output = json.dumps(context, sort_keys=True, indent=2)
+    log.debug(f'output, ``{output}``')
+    return HttpResponse(output, content_type='application/json; charset=utf-8')
