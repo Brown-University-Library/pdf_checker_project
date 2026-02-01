@@ -35,7 +35,6 @@ def info(request):
     """
     log.debug('starting info()')
     ## prep data ----------------------------------------------------
-    # context = { 'message': 'Hello, world.' }
     context = {
         'quote': 'The best life is the one in which the creative impulses play the largest part and the possessive impulses the smallest.',
         'author': 'Bertrand Russell',
@@ -49,7 +48,7 @@ def info(request):
         )
     else:
         log.debug('building template response')
-        resp = render(request, 'info.html', context)
+        resp = render(request, 'pdf_checker_app/info.html', context)
     return resp
 
 
