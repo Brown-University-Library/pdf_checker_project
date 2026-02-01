@@ -17,6 +17,7 @@ Notes:
 """
 
 import pathlib
+import re
 from argparse import ArgumentParser
 
 import httpx
@@ -49,17 +50,18 @@ def split_pattern_header(content: str) -> tuple[str, str]:
     """
     Splits the upstream pattern header into head and body fragments.
     """
-    target_link = '<link rel="stylesheet" href="https://dlibwwwcit.services.brown.edu/common/css/bul_patterns.css"/>'
-    target_line = f'{target_link}\n'
+    link_pattern = re.compile(
+        r'(<link\b[^>]*href=["\"]https://dlibwwwcit.services.brown.edu/common/css/bul_patterns.css["\"][^>]*>)',
+        re.IGNORECASE,
+    )
+    match = link_pattern.search(content)
     head_content = ''
     body_content = content
 
-    if target_line in content:
-        head_content = f'{target_link}\n'
-        body_content = content.replace(target_line, '', 1)
-    elif target_link in content:
-        head_content = f'{target_link}\n'
-        body_content = content.replace(target_link, '', 1)
+    if match:
+        link_tag = match.group(1)
+        head_content = f'{link_tag}\n'
+        body_content = content.replace(link_tag, '', 1)
 
     return head_content, body_content
 
