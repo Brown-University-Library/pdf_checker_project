@@ -21,5 +21,5 @@ class MarkdownHelpersTest(TestCase):
         Checks load_markdown_from_lib() reads and renders the info.md file.
         """
         html = markdown_helpers.load_markdown_from_lib('info.md')
-        self.assertIn('About the PDF Accessibility Checker', html)
-        self.assertIn('Something here.', html)
+        self.assertIn('About the experimental PDF Accessibility Checker', html)
+        self.assertIn('This is an <em>experimental</em> webapp.', html)
