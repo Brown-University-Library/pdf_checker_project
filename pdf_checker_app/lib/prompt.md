@@ -8,12 +8,13 @@
 
 # Task: 
 - Imagine a user has uploaded this pdf to a customized pdf-accessibility checker.
-- Imagine the user is not a developer, and not extremely technically savvy, but does have access to a couple of the most common pdf-editing tools like Acrobat.
+- Imagine the user is not a developer, and not extremely technically savvy, but does have access to the current version of Adobe Acrobat.
 - Analyze the validation-result json file above.
 - Main task: Come up with some helpful suggestions to the user about how to start fixing the errors.
 
 ## Regarding your helpful-suggestions:
 - Focus on the top three improvements that would give the most "bang for the buck", in terms of improving accessibility.
+- Consider offering specific Acrobat steps -- but _ONLY_ if you're confident they're accurate.
 - Start the helpful-suggestions text like: "Here are some suggestions to improve the accessibility of your PDF."
 - Do not mention or reference the report.
 - It's ok to mention that there are other things that may need to be addressed, but the goal is to not overwhelm the user.
