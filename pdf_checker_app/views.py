@@ -159,11 +159,16 @@ def view_report(request, pk: uuid.UUID):
     except OpenRouterSummary.DoesNotExist:
         pass
 
+    suggestions_html: str | None = None
+    if suggestions and suggestions.status == 'completed' and suggestions.summary_text:
+        suggestions_html = markdown_helpers.render_markdown_text(suggestions.summary_text)
+
     context = {
         'document': doc,
         'verapdf_raw_json': verapdf_raw_json,
         'assessment': assessment,
         'suggestions': suggestions,
+        'suggestions_html': suggestions_html,
     }
     log.debug(f'context, ``{context}``')
 
@@ -259,6 +264,10 @@ def summary_fragment(request, pk: uuid.UUID):
     if isinstance(verapdf_raw_json, dict):
         assessment = pdf_helpers.get_accessibility_assessment(verapdf_raw_json)
 
+    suggestions_html: str | None = None
+    if suggestions and suggestions.status == 'completed' and suggestions.summary_text:
+        suggestions_html = markdown_helpers.render_markdown_text(suggestions.summary_text)
+
     response = render(
         request,
         'pdf_checker_app/fragments/summary_fragment.html',
@@ -266,6 +275,7 @@ def summary_fragment(request, pk: uuid.UUID):
             'document': doc,
             'assessment': assessment,
             'suggestions': suggestions,
+            'suggestions_html': suggestions_html,
         },
     )
     response['Cache-Control'] = 'no-store'
