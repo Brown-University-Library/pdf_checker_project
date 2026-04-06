@@ -23,3 +23,6 @@ prod = [
     "mysqlclient~=2.2.0", 
     ]
 ci_tests = []
+
+[tool.uv]
+exclude-newer = "1 week"
